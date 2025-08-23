@@ -1,0 +1,12 @@
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import React from "react";
+
+const Page = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  return <div>Dashboard {session?.user?.name}</div>;
+};
+
+export default Page;
