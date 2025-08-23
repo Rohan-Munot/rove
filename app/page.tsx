@@ -1,6 +1,6 @@
 "use client";
-
-import { signIn, useSession } from "@/lib/auth-client";
+import { signIn, signOut, useSession } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { data: session, isPending } = useSession();
@@ -18,6 +18,12 @@ export default function Home() {
     return (
       <div className="text-primary text-9xl flex justify-center font-bold items-center h-screen">
         Welcome, {session.user.name}!
+        <Button
+          onClick={() => signOut()}
+          className="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-blue-600 flex items-center gap-2"
+        >
+          Sign Out
+        </Button>
       </div>
     );
   }
