@@ -25,4 +25,10 @@ export class TripService {
       .orderBy(schema.chatMessages.createdAt);
     return chatHistory;
   }
+  static async saveItineraryOptions(tripId: string, itineraries: unknown) {
+    await db
+      .update(schema.trips)
+      .set({ itineraryOptions: itineraries as any })
+      .where(eq(schema.trips.id, tripId));
+  }
 }

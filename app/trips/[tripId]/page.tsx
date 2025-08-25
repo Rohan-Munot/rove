@@ -1,0 +1,32 @@
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+import { TripService } from "@/lib/services/trip-service";
+import ItineraryView from "./itinerary-view";
+
+export default async function TripPage({
+  params,
+}: {
+  params: Promise<{ tripId: string }>;
+}) {
+  const { tripId } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return <div className="p-8">Unauthorized</div>;
+  }
+
+  const trip = await TripService.getTripByUserandId(session.user.id, tripId);
+
+  if (!trip) {
+    return <div className="p-8">Trip not found</div>;
+  }
+
+  const itineraries = (trip as any).itineraryOptions ?? [];
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-6xl mx-auto">
+        <ItineraryView tripId={tripId} itineraries={itineraries} />
+      </div>
+    </div>
+  );
+}
