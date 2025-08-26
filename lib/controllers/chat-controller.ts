@@ -11,7 +11,7 @@ export class ChatController {
 
       const aiResponse = await AIService.generateResponse(message);
 
-      if (aiResponse.type === "question") {
+      if (aiResponse?.type === "question") {
         await ChatService.addAiMessage(tripId, aiResponse.data as string);
         return {
           type: "question",
@@ -19,7 +19,7 @@ export class ChatController {
           tripId,
         };
       } else {
-        const itineraryData = aiResponse.data as ItineraryResponse;
+        const itineraryData = aiResponse?.data as ItineraryResponse;
         await TripService.saveItineraryOptions(
           tripId,
           itineraryData.itineraries
@@ -53,7 +53,7 @@ export class ChatController {
 
       const aiResponse = await AIService.generateResponse(message, chatHistory);
 
-      if (aiResponse.type === "question") {
+      if (aiResponse?.type === "question") {
         await ChatService.addAiMessage(tripId, aiResponse.data as string);
         return {
           type: "question",
@@ -61,7 +61,7 @@ export class ChatController {
           tripId,
         };
       } else {
-        const itineraryData = aiResponse.data as ItineraryResponse;
+        const itineraryData = aiResponse?.data as ItineraryResponse;
         await TripService.saveItineraryOptions(
           tripId,
           itineraryData.itineraries

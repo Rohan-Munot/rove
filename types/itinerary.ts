@@ -1,33 +1,67 @@
 // types/itinerary.ts
-export interface Itinerary {
+import { Type } from "@google/genai";
+
+// Update your existing types to include the new structure
+export interface Destination {
+  city: string;
+  state?: string;
+  country: string;
+}
+
+export interface TravelerProfile {
+  type: string;
+  goals_from_trip: string;
+  pace_of_trip: string;
+}
+
+export interface BudgetOverview {
+  budget_preference: string;
+  max_budget?: string;
+}
+
+export interface ActivityDetails {
+  location: string;
+  cost_estimation: string;
+  other_details?: string;
+}
+
+export interface ScheduleItem {
+  time_slot: string;
+  type: string;
   title: string;
-  theme: string;
-  duration: string;
-  traveler_type: string;
-  budget: string;
-  daily_plan: DayPlan[];
+  description: string;
+  details: ActivityDetails;
 }
 
 export interface DayPlan {
   day: number;
   theme: string;
-  activities: Activity[];
-  meal_suggestions: MealSuggestion[];
+  schedule: ScheduleItem[];
 }
 
-export interface Activity {
-  time: string;
-  activity_name?: string;
-  description: string;
-  duration?: string;
-  cost_estimate?: string;
+export interface AccommodationDetails {
+  name: string;
+  contact_details?: string;
+  address: string;
 }
 
-export interface MealSuggestion {
-  time: string;
-  restaurant_name?: string;
-  description: string;
-  cost_estimate?: string;
+export interface Logistics {
+  accommodation_details?: AccommodationDetails[];
+  transport_options?: string;
+  booking_details?: string;
+}
+
+export interface Itinerary {
+  id?: string; // For iterative generation
+  title: string;
+  theme: string;
+  duration: string;
+  destination: Destination;
+  traveling_from?: Destination;
+  traveler_profile: TravelerProfile;
+  budget_overview: BudgetOverview;
+  daily_plan: DayPlan[];
+  logistics?: Logistics;
 }
 
 export interface ItineraryResponse {

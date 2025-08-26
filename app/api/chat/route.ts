@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { message, tripID } = await request.json();
+    const { message, tripId } = await request.json();
 
     if (!message) {
       return NextResponse.json(
@@ -21,10 +21,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = tripID
+    const result = tripId
       ? await ChatController.handleExistingChat(
           session.user.id,
-          tripID,
+          tripId,
           message
         )
       : await ChatController.handleNewChat(session.user.id, message);

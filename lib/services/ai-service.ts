@@ -1,10 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 import { ItineraryResponse } from "@/types/itinerary";
+import {
+  basicItinerarySchema,
+  dailyPlanSchema,
+  logisticsSchema,
+} from "@/utils/itinerary-schema";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 const groundingTool = { googleSearch: {} };
+
 export class AIService {
   static async generateResponse(userMessage: string, chatHistory?: any[]) {
     try {
@@ -16,181 +22,266 @@ export class AIService {
           .join("\n");
       }
 
-      const systemPrompt = `You are "TripGenie," a world-class AI travel assistant. Your goal is to create 3 detailed, distinct itinerary options.
+      // Check if we have enough information to generate itineraries
+      const hasEnoughInfo = this.hasRequiredInformation(userMessage, context);
 
-**CRITICAL INSTRUCTIONS:**
-1.  **Information Gathering Phase:** You MUST first collect all of the following required information. If any piece is missing from the conversation history, your ONLY job is to ask a friendly, clarifying question to get it. DO NOT create an itinerary yet.
-    * Destination: City/Country
-    * Trip Duration: Number of days
-    * Traveler Type: Solo, couple, family, etc.
-    * Interests: Food, history, adventure, art, relaxation, etc.
-    * Budget: Budget, mid-range, or luxury.
-
-2.  **Generation Phase:** Once you have ALL the above information, and ONLY then, your response MUST be a single, valid JSON object following this EXACT structure:
-
-{
-  "itineraries": [
-    {
-      "title": "Catchy title for this itinerary",
-      "theme": "Brief description of what makes this itinerary unique",
-      "duration": "X days",
-      "traveler_type": "Solo/Couple/Family/etc",
-      "budget": "Budget/Mid-range/Luxury",
-      "daily_plan": [
-        {
-          "day": 1,
-          "theme": "Theme for this day",
-          "activities": [
-            {
-              "time": "Morning/Afternoon/Evening/Late Evening",
-              "activity_name": "Name of the activity",
-              "description": "Detailed description (2-3 sentences)",
-              "duration": "X hours",
-              "cost_estimate": "$XX - $XX (or Free)"
-            }
-            // MINIMUM 4-5 activities per day
-          ],
-          "meal_suggestions": [
-            {
-              "time": "Breakfast/Lunch/Dinner",
-              "restaurant_name": "Specific restaurant name or type",
-              "description": "What to try and why",
-              "cost_estimate": "$XX - $XX"
-            }
-          ]
-        }
-        // Repeat for each day
-      ]
-    }
-    // Create 3 distinct itineraries
-  ]
-}
-
-**IMPORTANT REQUIREMENTS:**
-- Each day MUST have 4-5 activities minimum
-- Activities should align with the interests provided (${
-        userMessage.includes("food") ? "food experiences" : ""
-      }${userMessage.includes("adventure") ? "adventurous activities" : ""}${
-        userMessage.includes("history") ? "historical sites" : ""
-      })
-- Budget should influence activity choices and cost estimates
-- Each itinerary should have a different theme/focus
-- Include specific names of places, restaurants, and attractions
-- Provide realistic time estimates and costs
-
-Do not include any text before or after the JSON object.
-
----
-**User's new message:**
-      ${userMessage}`;
-
-      const fullPrompt = isFirstMessage
-        ? `${systemPrompt}\n\nUser: ${userMessage}\n\nAssistant:`
-        : `${systemPrompt}\n\nConversation History:\n${context}\n\nUser: ${userMessage}\n\nAssistant:`;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: fullPrompt,
-        config: {
-          thinkingConfig: {
-            thinkingBudget: 0,
-          },
-          tools: [groundingTool],
-        },
-      });
-
-      const responseText =
-        (response as any)?.text ?? (response as any)?.response?.text?.() ?? "";
-
-      if (responseText && this.isJsonResponse(responseText)) {
-        const parsedResponse = this.parseAndValidateJson(responseText);
-        return {
-          type: "itineraries",
-          data: parsedResponse,
-        };
-      } else {
-        return {
-          type: "question",
-          data: responseText,
-        };
+      if (!hasEnoughInfo) {
+        return await this.askForMissingInformation(userMessage, context);
       }
+
+      // Generate itineraries iteratively
+      return await this.generateIterativeItineraries(userMessage, context);
     } catch (error) {
       console.error("Error generating response:", error);
       throw error;
     }
   }
 
-  private static isJsonResponse(text: string): boolean {
-    const trimmed = text.trim();
+  private static hasRequiredInformation(
+    userMessage: string,
+    context: string
+  ): boolean {
+    const fullText = `${context} ${userMessage}`.toLowerCase();
 
-    // Check if the response contains JSON in markdown code blocks
-    if (trimmed.includes("```json") && trimmed.includes("```")) {
-      return true;
-    }
+    // Check for required information
+    const hasDestination =
+      /\b(to|visit|going|trip to|traveling to)\s+([a-zA-Z\s]+)/i.test(
+        fullText
+      ) || /\b([a-zA-Z]+)\s*,\s*([a-zA-Z]+)/i.test(fullText);
+    const hasDuration = /\b(\d+)\s*(day|days|week|weeks)\b/i.test(fullText);
+    const hasTravelerType =
+      /\b(solo|couple|family|friends|business|honeymoon)\b/i.test(fullText);
+    const hasInterests =
+      /\b(culture|food|adventure|history|art|relaxation|nightlife|shopping)\b/i.test(
+        fullText
+      );
+    const hasBudget =
+      /\b(budget|mid-range|luxury|cheap|expensive|mid\s*budget)\b/i.test(
+        fullText
+      );
 
-    // Check for JSON wrapped in markdown code blocks at the start/end
-    if (trimmed.startsWith("```json") && trimmed.endsWith("```")) {
-      return true;
-    }
-    if (trimmed.startsWith("```") && trimmed.endsWith("```")) {
-      return true;
-    }
-
-    // Check for plain JSON
-    return trimmed.startsWith("{") && trimmed.endsWith("}");
+    return (
+      hasDestination &&
+      hasDuration &&
+      hasTravelerType &&
+      hasInterests &&
+      hasBudget
+    );
   }
 
-  private static parseAndValidateJson(jsonString: string): ItineraryResponse {
+  private static async askForMissingInformation(
+    userMessage: string,
+    context: string
+  ) {
+    const systemPrompt = `You are "Rove," an AI travel assistant. Analyze the conversation and ask for any missing required information in a friendly, conversational way.
+
+Required information:
+- Destination (city/country)
+- Trip duration (number of days)
+- Traveler type (solo, couple, family, etc.)
+- Interests (food, culture, adventure, etc.)
+- Budget preference (budget, mid-range, luxury)
+
+Context: ${context || "This is the first message"}
+User message: ${userMessage}
+
+Ask for missing information in a single, friendly message. If most information is provided, just ask for what's missing specifically.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: userMessage,
+      config: {
+        systemInstruction: systemPrompt,
+        thinkingConfig: { thinkingBudget: 0 }, // Increased thinking budget
+      },
+    });
+
+    return {
+      type: "question",
+      data:
+        response.text ??
+        "Could you provide more details about your trip preferences?",
+    };
+  }
+
+  private static async generateIterativeItineraries(
+    userMessage: string,
+    context: string
+  ) {
     try {
-      let cleanJson = jsonString.trim();
-
-      // Extract JSON from mixed content (text + JSON in markdown)
-      const jsonMatch = cleanJson.match(/```json\s*\n([\s\S]*?)\n\s*```/);
-      if (jsonMatch) {
-        cleanJson = jsonMatch[1];
-      } else {
-        // Handle other markdown block formats
-        if (cleanJson.startsWith("```json")) {
-          cleanJson = cleanJson
-            .replace(/^```json\s*/, "")
-            .replace(/\s*```$/, "");
-        }
-        if (cleanJson.startsWith("```")) {
-          cleanJson = cleanJson.replace(/^```\s*/, "").replace(/\s*```$/, "");
-        }
-      }
-
-      const parsed = JSON.parse(cleanJson) as ItineraryResponse;
-
-      if (!parsed.itineraries || !Array.isArray(parsed.itineraries)) {
-        throw new Error("Invalid JSON structure: missing itineraries array");
-      }
-
-      if (parsed.itineraries.length === 0) {
-        throw new Error("No itineraries found in response");
-      }
-
-      parsed.itineraries.forEach((itinerary, index) => {
-        if (!itinerary.title || !itinerary.theme || !itinerary.daily_plan) {
-          throw new Error(`Itinerary ${index + 1} is missing required fields`);
-        }
-
-        if (
-          !Array.isArray(itinerary.daily_plan) ||
-          itinerary.daily_plan.length === 0
-        ) {
-          throw new Error(`Itinerary ${index + 1} has invalid daily_plan`);
-        }
-      });
-
-      return parsed;
-    } catch (error) {
-      console.error("JSON parsing/validation error:", error);
-      throw new Error(
-        `Failed to parse AI response: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      // Step 0: Gather additional information using tools (optional)
+      const enrichedContext = await this.gatherAdditionalInfo(
+        userMessage,
+        context
       );
+
+      // Step 1: Generate basic itinerary information (without tools)
+      console.log("Step 1: Generating basic itinerary information...");
+      const basicItineraries = await this.generateBasicItineraries(
+        userMessage,
+        enrichedContext
+      );
+
+      // Step 2: Generate detailed daily plans for each itinerary
+      console.log("Step 2: Generating detailed daily plans...");
+      const completeItineraries = await Promise.all(
+        basicItineraries.itineraries.map(async (itinerary: any) => {
+          const dailyPlan = await this.generateDailyPlan(
+            itinerary,
+            userMessage,
+            enrichedContext
+          );
+          return { ...itinerary, daily_plan: dailyPlan.daily_plan };
+        })
+      );
+
+      // Step 3: Generate logistics information
+      console.log("Step 3: Generating logistics information...");
+      const logistics = await this.generateLogistics(
+        completeItineraries,
+        userMessage,
+        enrichedContext
+      );
+
+      // Combine everything
+      const finalItineraries = completeItineraries.map((itinerary) => ({
+        ...itinerary,
+        logistics: logistics.logistics,
+      }));
+
+      return {
+        type: "itineraries",
+        data: { itineraries: finalItineraries },
+      };
+    } catch (error) {
+      console.error("Error in iterative generation:", error);
+      throw error;
     }
+  }
+
+  private static async gatherAdditionalInfo(
+    userMessage: string,
+    context: string
+  ) {
+    const systemPrompt = `You are "Rove," an AI travel assistant. Use web search to gather current information about the destination mentioned in the user's request. Focus on:
+- Current attractions and activities
+- Recent restaurant recommendations
+- Transportation options
+- Accommodation suggestions
+- Local events or seasonal considerations
+
+Summarize the key findings that would be useful for creating travel itineraries.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `${context}\n\nUser: ${userMessage}`,
+      config: {
+        systemInstruction: systemPrompt,
+        thinkingConfig: { thinkingBudget: 20000 },
+        tools: [groundingTool], // Use tools here for information gathering
+      },
+    });
+
+    return `${context}\n\nAdditional Context: ${response.text}`;
+  }
+
+  private static async generateBasicItineraries(
+    userMessage: string,
+    context: string
+  ) {
+    const systemPrompt = `You are "Rove," an AI travel assistant. Generate 3 distinct basic itinerary concepts based on the user's requirements.
+
+Context: ${context}
+User requirements: ${userMessage}
+
+Focus on creating 3 different themes/approaches for the same destination. Each should have a unique focus (e.g., culture-focused, adventure-focused, relaxation-focused).
+
+Generate ONLY the JSON object with basic itinerary information. No additional text.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `${context}\n\nUser: ${userMessage}`,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: basicItinerarySchema,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    });
+
+    return JSON.parse(response.text ?? "{}");
+  }
+
+  private static async generateDailyPlan(
+    itinerary: any,
+    userMessage: string,
+    context: string
+  ) {
+    const systemPrompt = `You are "Rove," an AI travel assistant. Generate a detailed daily plan for this specific itinerary:
+
+Title: ${itinerary.title}
+Theme: ${itinerary.theme}
+Duration: ${itinerary.duration}
+Destination: ${itinerary.destination.city}, ${itinerary.destination.country}
+Traveler Profile: ${itinerary.traveler_profile.type}
+Budget: ${itinerary.budget_overview.budget_preference}
+Goals: ${itinerary.traveler_profile.goals_from_trip}
+
+Original user requirements: ${userMessage}
+Context: ${context}
+
+Create a detailed daily schedule that matches this itinerary's theme and the traveler's preferences. Include specific locations, realistic timing, and appropriate activities for the budget level.
+
+Generate ONLY the JSON object with daily plan information. No additional text.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Generate daily plan for: ${itinerary.title}`,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: dailyPlanSchema,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    });
+
+    return JSON.parse(response.text ?? "{}");
+  }
+
+  private static async generateLogistics(
+    itineraries: any[],
+    userMessage: string,
+    context: string
+  ) {
+    const destination = itineraries[0]?.destination;
+    const budget = itineraries[0]?.budget_overview?.budget_preference;
+    const duration = itineraries[0]?.duration;
+
+    const systemPrompt = `You are "Rove," an AI travel assistant. Generate logistics information for a trip to ${destination?.city}, ${destination?.country}.
+
+Trip details:
+- Duration: ${duration}
+- Budget: ${budget}
+- Destination: ${destination?.city}, ${destination?.country}
+
+User requirements: ${userMessage}
+Context: ${context}
+
+Provide practical logistics information including accommodation recommendations, transportation options, and booking details.
+
+Generate ONLY the JSON object with logistics information. No additional text.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Generate logistics for ${destination?.city}, ${destination?.country}`,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: logisticsSchema,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    });
+
+    return JSON.parse(response.text ?? "{}");
   }
 }

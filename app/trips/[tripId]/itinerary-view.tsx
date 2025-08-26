@@ -127,19 +127,19 @@ export default function ItineraryView({
                 }`}
                 onClick={() => setSelected(selected === index ? null : index)}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg">{itinerary.title}</h3>
-                  <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+                <div className="flex justify-between text-black items-start mb-2">
+                  <h3 className="font-semibold text-lg ">{itinerary.title}</h3>
+                  <span className="text-sm px-2 py-1 rounded">
                     {itinerary.duration}
                   </span>
                 </div>
                 <p className="text-gray-600 text-sm mb-3">{itinerary.theme}</p>
                 <div className="flex gap-2 text-xs">
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    {itinerary.budget}
+                    {itinerary.budget_overview.budget_preference}
                   </span>
                   <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                    {itinerary.traveler_type}
+                    {itinerary.traveler_profile.type}
                   </span>
                 </div>
 
@@ -151,15 +151,15 @@ export default function ItineraryView({
                           Day {day.day}: {day.theme}
                         </h4>
                         <div className="space-y-2">
-                          {day.activities.map((activity, actIndex) => (
+                          {day.schedule.map((activity, actIndex) => (
                             <div key={actIndex} className="text-sm">
                               <div className="flex justify-between">
                                 <span className="font-medium">
-                                  {activity.time}
+                                  {activity.time_slot}
                                 </span>
-                                {activity.cost_estimate && (
+                                {activity.details.cost_estimation && (
                                   <span className="text-gray-500">
-                                    {activity.cost_estimate}
+                                    {activity.details.cost_estimation}
                                   </span>
                                 )}
                               </div>
