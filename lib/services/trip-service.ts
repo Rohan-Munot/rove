@@ -2,6 +2,7 @@ import { db } from "@/database";
 import * as schema from "@/database/db/schema";
 import { and, eq } from "drizzle-orm";
 import { ModelMessage } from "ai";
+import { Itinerary } from "@/types/itinerary";
 
 export class TripService {
   static async createTrip(userId: string) {
@@ -36,7 +37,7 @@ export class TripService {
   static async saveItineraryOptions(tripId: string, itineraries: unknown) {
     await db
       .update(schema.trips)
-      .set({ itineraryOptions: itineraries as any })
+      .set({ itineraryOptions: itineraries as Itinerary[] })
       .where(eq(schema.trips.id, tripId));
   }
 }

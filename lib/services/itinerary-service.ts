@@ -10,6 +10,7 @@ import {
   DAILY_PLAN_PROMPT,
 } from "@/lib/ai/prompts/itinerary";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
+import { Itinerary } from "@/types/itinerary";
 
 export class ItineraryService {
   static async generateBasicItineraries(userMessage: string, context: string) {
@@ -24,7 +25,7 @@ export class ItineraryService {
     return object;
   }
 
-  static async generateDailyPlan(itinerary: any, context: string) {
+  static async generateDailyPlan(itinerary: Itinerary, context: string) {
     const { object } = await generateObject({
       model,
       schema: dailyPlanSchema,
@@ -37,7 +38,7 @@ export class ItineraryService {
   }
 
   static async generateLogistics(
-    itineraries: any[],
+    itineraries: Itinerary[],
     userMessage: string,
     context: string
   ) {

@@ -13,8 +13,7 @@ export default function ItineraryView({
   tripId: string;
   itineraries: Itinerary[];
 }) {
-  const [itineraries, setItineraries] =
-    useState<Itinerary[]>(initialItineraries);
+  const itineraries: Itinerary[] = initialItineraries;
   const [selected, setSelected] = useState<number | null>(null);
   const [refinePrompt, setRefinePrompt] = useState("");
   const [clarify, setClarify] = useState<string | null>(null);

@@ -3,6 +3,7 @@ import { model } from "@/lib/ai/client";
 import { ItineraryService } from "./itinerary-service";
 import { CacheService } from "./cache-service";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
+import { Itinerary } from "@/types/itinerary";
 
 export class AIService {
   static async generateResponse(
@@ -44,7 +45,7 @@ export class AIService {
       const completeItineraries = await Promise.all(
         basicItineraries.itineraries.map(async (itinerary) => {
           const dailyPlan = await ItineraryService.generateDailyPlan(
-            itinerary,
+            itinerary as Itinerary,
             enrichedContext
           );
           return { ...itinerary, daily_plan: dailyPlan.daily_plan };

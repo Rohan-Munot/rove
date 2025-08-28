@@ -79,8 +79,8 @@ const Dashboard = () => {
                 Describe your ideal trip
               </h2>
               <p className="text-gray-600 text-sm mb-4">
-                Example: "5 days in Tokyo for a couple, love food and culture,
-                mid-range budget"
+                Example: &quot;5 days in Tokyo for a couple, love food and
+                culture, mid-range budget&quot;
               </p>
               <textarea
                 value={prompt}

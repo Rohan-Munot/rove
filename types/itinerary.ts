@@ -1,7 +1,3 @@
-// types/itinerary.ts
-import { Type } from "@google/genai";
-
-// Update your existing types to include the new structure
 export interface Destination {
   city: string;
   state?: string;

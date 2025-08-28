@@ -1,3 +1,5 @@
+import { Itinerary } from "@/types/itinerary";
+
 export const BASIC_ITINERARY_PROMPT = (
   context: string,
   userMessage: string
@@ -15,7 +17,7 @@ Each itinerary should match the user's specified duration, budget, and traveler 
 Ensure cost estimations are in the appropriate currency for the user's location.
 `;
 
-export const DAILY_PLAN_PROMPT = (itinerary: any, context: string) => `
+export const DAILY_PLAN_PROMPT = (itinerary: Itinerary, context: string) => `
 Create a detailed daily schedule for this itinerary:
 
 Title: ${itinerary.title}

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { TripService } from "@/lib/services/trip-service";
 import ItineraryView from "./itinerary-view";
+import { Itinerary } from "@/types/itinerary";
 
 export default async function TripPage({
   params,
@@ -20,7 +21,7 @@ export default async function TripPage({
     return <div className="p-8">Trip not found</div>;
   }
 
-  const itineraries = (trip as any).itineraryOptions ?? [];
+  const itineraries = trip.itineraryOptions as Itinerary[];
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
