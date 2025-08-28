@@ -1,0 +1,76 @@
+---
+description: Defines the core concept, target audience, and key features of your application, acting as a foundational product brief.
+globs:
+alwaysApply: false
+---
+
+# Product Vision & Core App Idea
+
+You are an AI Trip Manager. Your role is to help refine and document the core vision of an application. When a new idea is being discussed, your primary goal is to structure the conversation into a clear and concise product brief.
+
+Guide the user to think critically about the following aspects of their application. If generating a brief from a vague idea, use this structure as your template.
+
+---
+
+## 1. App Name
+
+_(The proposed name for the application. Can be a placeholder.)_
+
+**Name: Rove**
+
+---
+
+## 2. Elevator Pitch
+
+_(A single, compelling sentence that summarizes what the app is and for whom. E.g., "A mobile app for avid hikers to discover, track, and share off-the-beaten-path trails.")_
+
+**Pitch:A single app or website for travellers to build their trips, generate comprehensive itineraries, one stop solutions for travel tools(maps, flight tracking, travel ststus, map integration, etc), This does not aim to replace but as a mere tool to improve and make ease for travel managers, and planning trips**
+
+---
+
+## 3. Problem Statement
+
+_(What specific, painful problem are you solving? Why does this problem exist? Who experiences this problem most acutely? Be as specific as possible.)_
+
+**The Problem:There is no single and complete solution for managing trips, builing itinerearies etc, this aims to fill the gaps as much as possible, **
+
+---
+
+## 4. Solution & Value Proposition
+
+_(How does your application solve the problem described above? What is the core value you provide to the user? What makes your solution effective and desirable?)_
+
+\*\*Our Solution:
+
+- Build comprehensive itineraries, include realtime flight status, give multiple travel options from one destination to another, if user has made booking manage them, provide live status, etc
+- Always focus on context of where the user is from and responding in the context or relative to the users native place, Example: (for budget or cost estimation, repond in the dollars if the user is from usa, if from india respond in rupees, same for all other units. )\*\*
+
+---
+
+## 5. Target Audience
+
+_(Describe your ideal user(s) in detail. Think about their demographics, behaviors, motivations, and technical skills. Create user personas if helpful.)_
+
+**Primary Users:People who are avid travelleres, (solo), travel agents, trip planners, guides, etc**
+
+---
+
+## 6. Key Features (MVP)
+
+_(List the 3-5 most critical features required to solve the core problem for the target audience. This is your Minimum Viable Product. For each feature, briefly describe what it does.)_
+
+**Core Features:**
+
+1.  **Itinerary Generation: Generate a complete itinerary along with travel options within few lines**
+2.  **Iterate:Dont just trust , refine the itinerary yourself**
+3.  **Cost Estimations:Give cost estimations for travel, food, activites etc. Try to give cost estimations in the users home currency. (Example: if user from usa travelling to india, give cost estimations in dollars)**
+
+---
+
+## 7. Unique Selling Proposition (USP)
+
+_(What makes your app different from existing solutions or competitors? Is it easier to use, cheaper, faster, or does it have a unique feature? This is your competitive advantage.)_
+
+**What Makes Us Different: Providing an complete solution to manage trips, with ai powered suggestions**
+
+---

@@ -5,6 +5,7 @@ import {
   boolean,
   uuid,
   jsonb,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -83,5 +84,27 @@ export const chatMessages = pgTable("chat_messages", {
     .references(() => trips.id, { onDelete: "cascade" }),
   role: text("role", { enum: ["user", "ai"] }).notNull(),
   content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const aiGenerations = pgTable("ai_generations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tripId: uuid("trip_id").references(() => trips.id, { onDelete: "cascade" }),
+  type: text("type", {
+    enum: ["basic_itinerary", "daily_plan", "logistics", "context"],
+  }).notNull(),
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  model: text("model").notNull(),
+  prompt: text("prompt"),
+  generatedData: jsonb("generated_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const destinationCache = pgTable("destination_cache", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  destination: text("destination").notNull().unique(),
+  contextData: text("context_data").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

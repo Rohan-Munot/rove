@@ -1,6 +1,7 @@
 import { db } from "@/database";
 import * as schema from "@/database/db/schema";
 import { and, eq } from "drizzle-orm";
+import { ModelMessage } from "ai";
 
 export class TripService {
   static async createTrip(userId: string) {
@@ -17,13 +18,20 @@ export class TripService {
       .where(and(eq(schema.trips.id, tripId), eq(schema.trips.userId, userId)));
     return trip;
   }
-  static async getChatHistory(tripId: string) {
-    const chatHistory = await db
-      .select()
+  static async getChatHistory(tripId: string): Promise<ModelMessage[]> {
+    const chatHistoryFromDb = await db
+      .select({
+        role: schema.chatMessages.role,
+        content: schema.chatMessages.content,
+      })
       .from(schema.chatMessages)
       .where(eq(schema.chatMessages.tripId, tripId))
       .orderBy(schema.chatMessages.createdAt);
-    return chatHistory;
+
+    return chatHistoryFromDb.map((message) => ({
+      role: message.role === "ai" ? "assistant" : "user",
+      content: message.content,
+    }));
   }
   static async saveItineraryOptions(tripId: string, itineraries: unknown) {
     await db
