@@ -25,7 +25,7 @@ const Dashboard = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message,
-          ...(existingTripId && { tripID: existingTripId }),
+          ...(existingTripId && { tripId: existingTripId }),
         }),
       });
       const data = await res.json();
