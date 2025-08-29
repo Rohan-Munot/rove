@@ -110,7 +110,6 @@ export const userProfile = pgTable("user_profile", {
   homeCountry: text("home_country").notNull(),
   homeCurrency: text("home_currency").notNull(),
   preferredLanguage: text("preferred_language").notNull(),
-  timeZone: text("time_zone").notNull(),
   createdAt: timestamp("created_at").$defaultFn(
     () => /* @__PURE__ */ new Date()
   ),

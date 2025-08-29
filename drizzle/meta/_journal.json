@@ -8,6 +8,13 @@
       "when": 1756411259978,
       "tag": "0000_broken_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1756476855290,
+      "tag": "0001_melted_tombstone",
+      "breakpoints": true
     }
   ]
 }

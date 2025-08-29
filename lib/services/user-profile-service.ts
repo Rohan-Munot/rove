@@ -9,7 +9,9 @@ import {
 } from "@/types/user-profile";
 
 export class UserProfileService {
-  private static convertToResponse(profile: any): UserProfileResponse {
+  private static convertToResponse(
+    profile: typeof userProfile.$inferSelect
+  ): UserProfileResponse {
     return {
       ...profile,
       createdAt: profile.createdAt?.toISOString() || new Date().toISOString(),
@@ -53,7 +55,6 @@ export class UserProfileService {
           homeCountry: location.country,
           homeCurrency: location.currency,
           preferredLanguage: location.language,
-          timeZone: location.timezone,
         })
         .returning();
 

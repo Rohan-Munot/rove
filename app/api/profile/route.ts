@@ -66,7 +66,6 @@ export async function POST(request: Request) {
     const profile = await UserProfileService.createProfile(session.user.id, {
       country: validatedData.homeCountry,
       currency: validatedData.homeCurrency,
-      timezone: validatedData.timeZone,
       language: validatedData.preferredLanguage,
     });
 
