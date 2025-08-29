@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { UserProfileService } from "@/lib/services/user-profile-service";
+import {
+  getProfile,
+  createProfile,
+  updateProfile,
+  deleteProfile,
+} from "@/lib/services/user-profile-service";
 import {
   userProfileUpdateSchema,
   userProfileCreateSchema,
@@ -29,7 +34,7 @@ export async function GET(request: Request) {
     if (!session) {
       return UNAUTHORIZED;
     }
-    const profile = await UserProfileService.getProfile(session.user.id);
+    const profile = await getProfile(session.user.id);
     if (!profile) {
       return NOT_FOUND;
     }
@@ -53,9 +58,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const validatedData = userProfileCreateSchema.parse(body);
-    const existingProfile = await UserProfileService.getProfile(
-      session.user.id
-    );
+    const existingProfile = await getProfile(session.user.id);
     if (existingProfile) {
       return NextResponse.json(
         { error: "Profile already exists. Use PATCH to update." },
@@ -63,7 +66,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const profile = await UserProfileService.createProfile(session.user.id, {
+    const profile = await createProfile(session.user.id, {
       country: validatedData.homeCountry,
       currency: validatedData.homeCurrency,
       language: validatedData.preferredLanguage,
@@ -94,10 +97,7 @@ export async function PATCH(request: Request) {
 
     const body = await request.json();
     const validatedUpdates = userProfileUpdateSchema.parse(body);
-    const profile = await UserProfileService.updateProfile(
-      session.user.id,
-      validatedUpdates
-    );
+    const profile = await updateProfile(session.user.id, validatedUpdates);
 
     const validatedProfile = userProfileResponseSchema.parse(profile);
     return NextResponse.json(validatedProfile);
@@ -117,7 +117,7 @@ export async function DELETE(request: Request) {
       return UNAUTHORIZED;
     }
 
-    const deleted = await UserProfileService.deleteProfile(session.user.id);
+    const deleted = await deleteProfile(session.user.id);
 
     if (!deleted) {
       return NOT_FOUND;

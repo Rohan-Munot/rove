@@ -4,40 +4,43 @@ import { and, eq } from "drizzle-orm";
 import { ModelMessage } from "ai";
 import { Itinerary } from "@/types/itinerary";
 
-export class TripService {
-  static async createTrip(userId: string) {
-    const newTrip = await db
-      .insert(schema.trips)
-      .values({ userId })
-      .returning({ id: schema.trips.id });
-    return newTrip[0].id;
-  }
-  static async getTripByUserandId(userId: string, tripId: string) {
-    const [trip] = await db
-      .select()
-      .from(schema.trips)
-      .where(and(eq(schema.trips.id, tripId), eq(schema.trips.userId, userId)));
-    return trip;
-  }
-  static async getChatHistory(tripId: string): Promise<ModelMessage[]> {
-    const chatHistoryFromDb = await db
-      .select({
-        role: schema.chatMessages.role,
-        content: schema.chatMessages.content,
-      })
-      .from(schema.chatMessages)
-      .where(eq(schema.chatMessages.tripId, tripId))
-      .orderBy(schema.chatMessages.createdAt);
+export const createTrip = async (userId: string) => {
+  const newTrip = await db
+    .insert(schema.trips)
+    .values({ userId })
+    .returning({ id: schema.trips.id });
+  return newTrip[0].id;
+};
+export const getTripByUserandId = async (userId: string, tripId: string) => {
+  const [trip] = await db
+    .select()
+    .from(schema.trips)
+    .where(and(eq(schema.trips.id, tripId), eq(schema.trips.userId, userId)));
+  return trip;
+};
+export const getChatHistory = async (
+  tripId: string
+): Promise<ModelMessage[]> => {
+  const chatHistoryFromDb = await db
+    .select({
+      role: schema.chatMessages.role,
+      content: schema.chatMessages.content,
+    })
+    .from(schema.chatMessages)
+    .where(eq(schema.chatMessages.tripId, tripId))
+    .orderBy(schema.chatMessages.createdAt);
 
-    return chatHistoryFromDb.map((message) => ({
-      role: message.role === "ai" ? "assistant" : "user",
-      content: message.content,
-    }));
-  }
-  static async saveItineraryOptions(tripId: string, itineraries: unknown) {
-    await db
-      .update(schema.trips)
-      .set({ itineraryOptions: itineraries as Itinerary[] })
-      .where(eq(schema.trips.id, tripId));
-  }
-}
+  return chatHistoryFromDb.map((message) => ({
+    role: message.role === "ai" ? "assistant" : "user",
+    content: message.content,
+  }));
+};
+export const saveItineraryOptions = async (
+  tripId: string,
+  itineraries: unknown
+) => {
+  await db
+    .update(schema.trips)
+    .set({ itineraryOptions: itineraries as Itinerary[] })
+    .where(eq(schema.trips.id, tripId));
+};

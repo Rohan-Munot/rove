@@ -11,56 +11,55 @@ import {
 } from "@/lib/ai/prompts/itinerary";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
 import { Itinerary } from "@/types/itinerary";
-import { UserProfile } from "@/types/user-profile";
+import { UserProfileResponse } from "@/types/user-profile";
 
-export class ItineraryService {
-  static async generateBasicItineraries(
-    userMessage: string,
-    context: string,
-    userProfile?: UserProfile
-  ) {
-    const { object } = await generateObject({
-      model,
-      schema: basicItinerarySchema,
-      system: SYSTEM_IDENTITY,
-      prompt: BASIC_ITINERARY_PROMPT(context, userMessage, userProfile),
-      temperature: 0.7,
-    });
+export const generateBasicItineraries = async (
+  userMessage: string,
+  context: string,
+  userProfile?: UserProfileResponse
+) => {
+  const { object } = await generateObject({
+    model,
+    schema: basicItinerarySchema,
+    system: SYSTEM_IDENTITY,
+    prompt: BASIC_ITINERARY_PROMPT(context, userMessage, userProfile),
+    temperature: 0.7,
+  });
 
-    return object;
-  }
+  return object;
+};
 
-  static async generateDailyPlan(
-    itinerary: Itinerary,
-    context: string,
-    userProfile?: UserProfile
-  ) {
-    const { object } = await generateObject({
-      model,
-      schema: dailyPlanSchema,
-      system: SYSTEM_IDENTITY,
-      prompt: DAILY_PLAN_PROMPT(itinerary, context, userProfile),
-      temperature: 0.6,
-    });
+export const generateDailyPlan = async (
+  itinerary: Itinerary,
+  context: string,
+  userProfile?: UserProfileResponse
+) => {
+  const { object } = await generateObject({
+    model,
+    schema: dailyPlanSchema,
+    system: SYSTEM_IDENTITY,
+    prompt: DAILY_PLAN_PROMPT(itinerary, context, userProfile),
+    temperature: 0.6,
+  });
 
-    return object;
-  }
+  return object;
+};
 
-  static async generateLogistics(
-    itineraries: Itinerary[],
-    userMessage: string,
-    context: string,
-    userProfile?: UserProfile
-  ) {
-    const destination = itineraries[0]?.destination;
+export const generateLogistics = async (
+  itineraries: Itinerary[],
+  userMessage: string,
+  context: string,
+  userProfile?: UserProfileResponse
+) => {
+  const destination = itineraries[0]?.destination;
 
-    const { object } = await generateObject({
-      model,
-      schema: logisticsSchema,
-      system: SYSTEM_IDENTITY,
-      prompt: `Generate practical logistics for ${destination?.city}, ${
-        destination?.country
-      }:
+  const { object } = await generateObject({
+    model,
+    schema: logisticsSchema,
+    system: SYSTEM_IDENTITY,
+    prompt: `Generate practical logistics for ${destination?.city}, ${
+      destination?.country
+    }:
       
       ${context}
       User requirements: ${userMessage}
@@ -74,9 +73,8 @@ export class ItineraryService {
       }
       
       Provide accommodation options, transportation details, and booking guidance.`,
-      temperature: 0.5,
-    });
+    temperature: 0.5,
+  });
 
-    return object;
-  }
-}
+  return object;
+};

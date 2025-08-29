@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { ChatController } from "@/lib/controllers/chat-controller";
+import {
+  handleExistingChat,
+  handleNewChat,
+} from "@/lib/controllers/chat-controller";
 
 export async function POST(request: Request) {
   try {
@@ -22,12 +25,8 @@ export async function POST(request: Request) {
     }
 
     const result = tripId
-      ? await ChatController.handleExistingChat(
-          session.user.id,
-          tripId,
-          message
-        )
-      : await ChatController.handleNewChat(session.user.id, message);
+      ? await handleExistingChat(session.user.id, tripId, message)
+      : await handleNewChat(session.user.id, message);
 
     return NextResponse.json(result);
   } catch (error) {
