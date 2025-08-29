@@ -100,6 +100,24 @@ export const aiGenerations = pgTable("ai_generations", {
   generatedData: jsonb("generated_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+export const userProfile = pgTable("user_profile", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, {
+      onDelete: "cascade",
+    }),
+  homeCountry: text("home_country").notNull(),
+  homeCurrency: text("home_currency").notNull(),
+  preferredLanguage: text("preferred_language").notNull(),
+  timeZone: text("time_zone").notNull(),
+  createdAt: timestamp("created_at").$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
+  updatedAt: timestamp("updated_at").$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
+});
 
 export const destinationCache = pgTable("destination_cache", {
   id: uuid("id").primaryKey().defaultRandom(),

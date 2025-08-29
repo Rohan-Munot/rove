@@ -4,11 +4,13 @@ import { ItineraryService } from "./itinerary-service";
 import { CacheService } from "./cache-service";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
 import { Itinerary } from "@/types/itinerary";
+import { UserProfileResponse } from "@/types/user-profile";
 
 export class AIService {
   static async generateResponse(
     userMessage: string,
-    chatHistory?: ModelMessage[]
+    chatHistory?: ModelMessage[],
+    userProfile?: UserProfileResponse
   ) {
     try {
       const messages: ModelMessage[] = [
@@ -16,12 +18,10 @@ export class AIService {
         { role: "user", content: userMessage },
       ];
 
-      // Create a string context for functions that still need it (e.g., hasRequiredInformation)
       const context = messages
         .map((message) => `${message.role}: ${message.content}`)
         .join("\n");
 
-      // Check if we have enough information
       const hasEnoughInfo = this.hasRequiredInformation(userMessage, context);
 
       if (!hasEnoughInfo) {
@@ -38,7 +38,8 @@ export class AIService {
       // Generate itineraries using the new service
       const basicItineraries = await ItineraryService.generateBasicItineraries(
         userMessage,
-        enrichedContext
+        enrichedContext,
+        userProfile
       );
 
       // Generate detailed plans for each itinerary
@@ -46,7 +47,8 @@ export class AIService {
         basicItineraries.itineraries.map(async (itinerary) => {
           const dailyPlan = await ItineraryService.generateDailyPlan(
             itinerary as Itinerary,
-            enrichedContext
+            enrichedContext,
+            userProfile
           );
           return { ...itinerary, daily_plan: dailyPlan.daily_plan };
         })
@@ -56,7 +58,8 @@ export class AIService {
       const logistics = await ItineraryService.generateLogistics(
         completeItineraries,
         userMessage,
-        enrichedContext
+        enrichedContext,
+        userProfile
       );
 
       const finalItineraries = completeItineraries.map((itinerary) => ({
