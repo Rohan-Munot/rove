@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { TripService } from "@/lib/services/trip-service";
+import { getTripByUserandId } from "@/lib/services/trip-service";
 import ItineraryView from "./itinerary-view";
 import { Itinerary } from "@/types/itinerary";
 
@@ -15,7 +15,7 @@ export default async function TripPage({
     return <div className="p-8">Unauthorized</div>;
   }
 
-  const trip = await TripService.getTripByUserandId(session.user.id, tripId);
+  const trip = await getTripByUserandId(session.user.id, tripId);
 
   if (!trip) {
     return <div className="p-8">Trip not found</div>;

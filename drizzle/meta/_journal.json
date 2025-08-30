@@ -15,6 +15,13 @@
       "when": 1756476855290,
       "tag": "0001_melted_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756534580678,
+      "tag": "0002_small_praxagora",
+      "breakpoints": true
     }
   ]
 }

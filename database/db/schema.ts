@@ -117,11 +117,3 @@ export const userProfile = pgTable("user_profile", {
     () => /* @__PURE__ */ new Date()
   ),
 });
-
-export const destinationCache = pgTable("destination_cache", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  destination: text("destination").notNull().unique(),
-  contextData: text("context_data").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});

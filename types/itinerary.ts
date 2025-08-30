@@ -48,7 +48,7 @@ export interface Logistics {
 }
 
 export interface Itinerary {
-  id?: string; // For iterative generation
+  id?: string;
   title: string;
   theme: string;
   duration: string;

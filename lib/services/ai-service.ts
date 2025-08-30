@@ -5,9 +5,7 @@ import {
   generateDailyPlan,
   generateLogistics,
 } from "./itinerary-service";
-import { getOrGenerateDestinationContext } from "./cache-service";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
-import { Itinerary } from "@/types/itinerary";
 import { UserProfileResponse } from "@/types/user-profile";
 
 export const generateResponse = async (
@@ -31,16 +29,10 @@ export const generateResponse = async (
       return await askForMissingInformation(messages);
     }
 
-    // Use cached context gathering
-    const enrichedContext = await getOrGenerateDestinationContext(
-      userMessage,
-      context
-    );
-
     // Generate itineraries using the new service
     const basicItineraries = await generateBasicItineraries(
       userMessage,
-      enrichedContext,
+      context,
       userProfile
     );
 
@@ -48,8 +40,8 @@ export const generateResponse = async (
     const completeItineraries = await Promise.all(
       basicItineraries.itineraries.map(async (itinerary) => {
         const dailyPlan = await generateDailyPlan(
-          itinerary as Itinerary,
-          enrichedContext,
+          itinerary as any,
+          context,
           userProfile
         );
         return { ...itinerary, daily_plan: dailyPlan.daily_plan };
@@ -60,7 +52,7 @@ export const generateResponse = async (
     const logistics = await generateLogistics(
       completeItineraries,
       userMessage,
-      enrichedContext,
+      context,
       userProfile
     );
 
