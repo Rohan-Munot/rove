@@ -1,18 +1,30 @@
-// File: lib/services/search.ts (or your existing search file)
-
-import { tavily } from "@tavily/core";
-import { SearchOptions } from "@/types/search-tool";
+import {
+  tavily,
+  TavilySearchOptions,
+  TavilySearchResponse,
+} from "@tavily/core";
 
 const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
 
-export const searchWeb = async (options: SearchOptions) => {
+const TrustedDomains = [
+  "https://www.tripadvisor.in",
+  "https://www.audleytravel.com",
+  "https://www.reddit.com",
+  "https://en.wikipedia.org/",
+];
+const excludedDomains = ["https://www.quora.com"];
+export const searchWeb = async (options: TavilySearchOptions) => {
   try {
     const response = await tvly.search(options.query, {
-      max_results: options.maxResults || 5,
-      search_depth: options.searchDepth || "basic",
+      max_results: options.max_results || 7,
+      search_depth: options.search_depth || "basic",
       include_answer: true,
-      include_raw_content: false,
+      include_raw_content: options.include_raw_content || false,
       include_images: options.include_images || false,
+      topic: options.topic,
+      include_domains: TrustedDomains,
+      exclude_domains: excludedDomains,
+      ...(options.time_range && { time_range: options.time_range }),
     });
     return response;
   } catch (error) {
@@ -21,12 +33,31 @@ export const searchWeb = async (options: SearchOptions) => {
   }
 };
 
+const processResults = (response: TavilySearchResponse) => {
+  const filteredResults = response.results
+    .filter((result) => result.score > 0.5)
+    .sort((a, b) => b.score - a.score)
+    .map((result) => ({
+      ...result,
+      title: result.title,
+      url: result.url,
+      score: result.score,
+      content: result.content,
+    }));
+  return {
+    ...response,
+    results: filteredResults,
+  };
+};
 export const searchDestinationInfo = async (destination: string) => {
-  const query = `in-depth travel guide for ${destination}, including major tourist attractions with opening hours, best time to visit based on weather, and local customs.`;
-  return await searchWeb({
+  const query = `"${destination}" travel guide attractions opening hours weather customs official tourism board`;
+
+  const response = await searchWeb({
     query: query,
-    maxResults: 5,
+    max_results: 8,
+    search_depth: "advanced",
   });
+  return processResults(response);
 };
 
 export const factCheckDetails = async (
@@ -34,10 +65,12 @@ export const factCheckDetails = async (
   location: string
 ) => {
   const query = `official website and contact number for "${entityName}" in ${location}`;
-  return await searchWeb({
+  const response = await searchWeb({
     query: query,
-    maxResults: 2,
+    max_results: 3,
+    search_depth: "advanced",
   });
+  return processResults(response);
 };
 
 export const getComprehensiveInfo = async (
@@ -52,9 +85,42 @@ export const getComprehensiveInfo = async (
   3. Average cost for mid-range meals and popular activities.
   4. Best neighborhoods to stay in for easy access to these interests.`;
 
-  return await searchWeb({
+  const response = await searchWeb({
     query: query,
-    maxResults: 10,
-    searchDepth: "advanced",
+    max_results: 10,
+    search_depth: "advanced",
   });
+  return processResults(response);
+};
+
+export const searchPricingInfo = async (
+  destination: string,
+  activity: string
+) => {
+  const query = `pricing information about ${activity} in ${destination}`;
+  const response = await searchWeb({
+    query: query,
+    max_results: 4,
+    search_depth: "basic",
+    topic: "general",
+  });
+  return processResults(response);
+};
+
+export const searchCurrentDestinationInfo = async (destination: string) => {
+  const query = `current travel conditions, seasonal events, and recent updates for ${destination}`;
+  try {
+    const response = await searchWeb({
+      query: query,
+      max_results: 5,
+      search_depth: "basic",
+      time_range: "month",
+      topic: "news",
+    });
+
+    return processResults(response);
+  } catch (error) {
+    console.error("Tavily search error:", error);
+    return { results: [], answer: "Information unavailable" };
+  }
 };
