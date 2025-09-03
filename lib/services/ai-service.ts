@@ -6,12 +6,10 @@ import {
   generateLogistics,
 } from "./itinerary-service";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
-import { UserProfileResponse } from "@/types/user-profile";
 
 export const generateResponse = async (
   userMessage: string,
-  chatHistory?: ModelMessage[],
-  userProfile?: UserProfileResponse
+  chatHistory?: ModelMessage[]
 ) => {
   try {
     const messages: ModelMessage[] = [
@@ -32,18 +30,13 @@ export const generateResponse = async (
     // Generate itineraries using the new service
     const basicItineraries = await generateBasicItineraries(
       userMessage,
-      context,
-      userProfile
+      context
     );
 
     // Generate detailed plans for each itinerary
     const completeItineraries = await Promise.all(
       basicItineraries.itineraries.map(async (itinerary) => {
-        const dailyPlan = await generateDailyPlan(
-          itinerary as any,
-          context,
-          userProfile
-        );
+        const dailyPlan = await generateDailyPlan(itinerary as any, context);
         return { ...itinerary, daily_plan: dailyPlan.daily_plan };
       })
     );
@@ -52,8 +45,7 @@ export const generateResponse = async (
     const logistics = await generateLogistics(
       completeItineraries,
       userMessage,
-      context,
-      userProfile
+      context
     );
 
     const finalItineraries = completeItineraries.map((itinerary) => ({

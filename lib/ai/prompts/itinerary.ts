@@ -1,26 +1,13 @@
 import { Itinerary } from "@/types/itinerary";
-import { UserProfile } from "@/types/user-profile";
 
 export const BASIC_ITINERARY_PROMPT = (
   context: string,
-  userMessage: string,
-  userProfile?: UserProfile
+  userMessage: string
 ) => `
 ${context}
-
-${
-  userProfile
-    ? `👤 User Profile:
-- Home Country: ${userProfile.homeCountry}
-- Home Currency: ${userProfile.homeCurrency}
-- Preferred Language: ${userProfile.preferredLanguage}
-
-IMPORTANT: All cost estimations must be shown in ${userProfile.homeCurrency}.
-Convert local prices to user's currency for better understanding and comparison.`
-    : ""
-}
-
 User requirements: ${userMessage}
+
+**Important**: Before generating the itineraries, use the available search tools to find up-to-date information on attractions, activities, and pricing. This is crucial for ensuring the suggestions are accurate and relevant.
 
 Generate 3 distinct itinerary concepts for the same destination, each with a unique focus:
 1. Culture & History focused
@@ -28,18 +15,10 @@ Generate 3 distinct itinerary concepts for the same destination, each with a uni
 3. Relaxation & Local Experience focused
 
 Each itinerary should match the user's specified duration, budget, and traveler type.
-${
-  userProfile
-    ? `Ensure cost estimations are in the appropriate currency (${userProfile.homeCurrency}).`
-    : "Provide realistic cost estimations."
-}
+Provide realistic cost estimations based on your search results.
 `;
 
-export const DAILY_PLAN_PROMPT = (
-  itinerary: Itinerary,
-  context: string,
-  userProfile?: UserProfile
-) => `
+export const DAILY_PLAN_PROMPT = (itinerary: Itinerary, context: string) => `
 Create a detailed daily schedule for this itinerary:
 
 Title: ${itinerary.title}
@@ -50,19 +29,13 @@ Budget: ${itinerary.budget_overview.budget_preference}
 Traveler Type: ${itinerary.traveler_profile.type}
 Goals: ${itinerary.traveler_profile.goals_from_trip}
 
-${
-  userProfile
-    ? `User's home currency: ${userProfile.homeCurrency}
-IMPORTANT: Show all costs in ${userProfile.homeCurrency}.`
-    : ""
-}
-
 Context: ${context}
+
+**Important**: Use the available search tools to verify all details. Check for current opening hours, ticket prices, travel times between locations, and any seasonal events or closures. Fact-check details like contact numbers and websites.
 
 Create a realistic daily schedule with:
 - Appropriate timing between activities
-- Budget-appropriate recommendations
+- Budget-appropriate recommendations based on verified pricing
 - Mix of must-see attractions and local experiences
 - Practical transportation suggestions
-${userProfile ? `- Cost estimates in ${userProfile.homeCurrency}` : ""}
 `;
