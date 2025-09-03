@@ -91,7 +91,7 @@ export const logisticsSchema = z.object({
           contact_details: z
             .string()
             .optional()
-            .describe("Phone number, email, or website"),
+            .describe("Phone number and/or website"),
           address: z.string().describe("Full address of the accommodation"),
         })
       )
