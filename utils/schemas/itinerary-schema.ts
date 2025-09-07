@@ -28,27 +28,6 @@ export const budgetOverviewSchema = z.object({
     .describe("Approximate total budget in their local currency"),
 });
 
-export const basicItinerarySchema = z.object({
-  itineraries: z
-    .array(
-      z.object({
-        id: z.string().describe("Unique identifier for this itinerary"),
-        title: z
-          .string()
-          .describe("Catchy, descriptive title for the itinerary"),
-        theme: z
-          .string()
-          .describe("Brief description of what makes this itinerary unique"),
-        duration: z.string().describe("Trip duration in format 'X days'"),
-        destination: destinationSchema,
-        traveler_profile: travelerProfileSchema,
-        budget_overview: budgetOverviewSchema,
-      })
-    )
-    .min(3)
-    .max(3),
-});
-
 export const scheduleItemSchema = z.object({
   time_slot: z
     .string()
@@ -68,18 +47,6 @@ export const scheduleItemSchema = z.object({
       .optional()
       .describe("Additional relevant information"),
   }),
-});
-
-export const dailyPlanSchema = z.object({
-  daily_plan: z
-    .array(
-      z.object({
-        day: z.number().describe("Day number (1, 2, 3, etc.)"),
-        theme: z.string().describe("Theme or focus for this specific day"),
-        schedule: z.array(scheduleItemSchema).min(2),
-      })
-    )
-    .min(1),
 });
 
 export const logisticsSchema = z.object({
@@ -102,4 +69,29 @@ export const logisticsSchema = z.object({
       .optional()
       .describe("Booking preferences or requirements"),
   }),
+});
+
+export const fullItineraryObjectSchema = z.object({
+  id: z.string().describe("Unique identifier for this itinerary"),
+  title: z.string().describe("Catchy, descriptive title for the itinerary"),
+  theme: z
+    .string()
+    .describe("Brief description of what makes this itinerary unique"),
+  duration: z.string().describe("Trip duration in format 'X days'"),
+  destination: destinationSchema,
+  traveler_profile: travelerProfileSchema,
+  budget_overview: budgetOverviewSchema,
+  daily_plan: z
+    .array(
+      z.object({
+        day: z.number().describe("Day number (1, 2, 3, etc.)"),
+        theme: z.string().describe("Theme or focus for this specific day"),
+        schedule: z.array(scheduleItemSchema).min(2),
+      })
+    )
+    .optional()
+    .describe("The detailed daily schedule for the itinerary."),
+  logistics: logisticsSchema.shape.logistics
+    .optional()
+    .describe("Logistical details like accommodation and transport."),
 });
