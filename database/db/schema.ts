@@ -117,3 +117,15 @@ export const userProfile = pgTable("user_profile", {
     () => /* @__PURE__ */ new Date()
   ),
 });
+export const chatSessions = pgTable("chat_sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  // You can optionally add: tripId: uuid("trip_id").references(() => trips.id),
+  messages: jsonb("messages"),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  updatedAt: timestamp("updated_at")
+    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
