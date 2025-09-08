@@ -50,7 +50,7 @@ ${context}
 
 Your task is to decide on one of two actions:
 
-1.  **If you have ALL the necessary information** (destination, trip duration, traveler type, interests, and budget preference), generate a comprehensive travel plan. You MUST return an object with \`type: "itineraries"\` containing an array of 3 distinct itinerary options.
+1.  **If you have ALL the necessary information** (destination, trip duration, traveler type, interests, and budget preference), generate a comprehensive travel plan. You MUST return an object with \`type: "itineraries"\` containing an array of a single itinerary.
 
 2.  **If ANY information is missing**, you MUST ask a clarifying question to the user. Return an object with \`type: "question"\` and the question text in the \`question\` field. Do NOT make up information.
 

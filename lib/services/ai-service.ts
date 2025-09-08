@@ -1,105 +1,30 @@
-import { generateText, ModelMessage } from "ai";
+import { ModelMessage, streamText } from "ai";
 import { model } from "@/lib/ai/client";
-import {
-  generateBasicItineraries,
-  generateDailyPlan,
-  generateLogistics,
-} from "./itinerary-service";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
 
-export const generateResponse = async (
-  userMessage: string,
-  chatHistory?: ModelMessage[]
-) => {
-  try {
-    const messages: ModelMessage[] = [
-      ...(chatHistory || []),
-      { role: "user", content: userMessage },
-    ];
-
-    const context = messages
-      .map((message) => `${message.role}: ${message.content}`)
-      .join("\n");
-
-    const hasEnoughInfo = hasRequiredInformation(userMessage, context);
-
-    if (!hasEnoughInfo) {
-      return await askForMissingInformation(messages);
-    }
-
-    // Generate itineraries using the new service
-    const basicItineraries = await generateBasicItineraries(
-      userMessage,
-      context
-    );
-
-    // Generate detailed plans for each itinerary
-    const completeItineraries = await Promise.all(
-      basicItineraries.itineraries.map(async (itinerary) => {
-        const dailyPlan = await generateDailyPlan(itinerary as any, context);
-        return { ...itinerary, daily_plan: dailyPlan.daily_plan };
-      })
-    );
-
-    // Generate logistics
-    const logistics = await generateLogistics(
-      completeItineraries,
-      userMessage,
-      context
-    );
-
-    const finalItineraries = completeItineraries.map((itinerary) => ({
-      ...itinerary,
-      logistics: logistics.logistics,
-    }));
-
-    return {
-      type: "itineraries",
-      data: { itineraries: finalItineraries },
-    };
-  } catch (error) {
-    console.error("Error generating response:", error);
-    throw error;
-  }
-};
-
-const askForMissingInformation = async (messages: ModelMessage[]) => {
-  const { text } = await generateText({
+export const generateChatResponse = async (messages: ModelMessage[]) => {
+  const result = streamText({
     model,
-    system: `${SYSTEM_IDENTITY}
+    system:
+      SYSTEM_IDENTITY +
+      `
+You are helping users plan their travel itineraries. Follow this approach:
 
-Analyze the conversation and ask for any missing required information in a friendly way.
+1. If the user hasn't provided complete travel information, ask ONE specific follow-up question to gather missing details.
 
-Required information:
-- Destination (city/country)
+Required information for planning:
+- Destination (specific city/country)
 - Trip duration (number of days)
 - Traveler type (solo, couple, family, etc.)
-- Interests (food, culture, adventure, etc.)
-- Budget preference (budget, mid-range, luxury)`,
+- Interests/preferences (food, culture, adventure, etc.)
+- Budget preference (budget, mid-range, luxury)
+
+2. If you have ALL the required information, respond with: "Perfect! I have all the details I need. Let me create some amazing itineraries for you! (Simulation mode - actual generation coming soon)"
+
+Be conversational, friendly, and ask only one question at a time.`,
     messages: messages,
-    temperature: 0.7,
+    temperature: 0.3,
   });
 
-  return {
-    type: "question",
-    data: text,
-  };
-};
-
-const hasRequiredInformation = (userMessage: string, context: string) => {
-  const fullText = `${context} ${userMessage}`.toLowerCase();
-
-  const hasDuration = /\b(\d+)\s*(day|days|week|weeks)\b/i.test(fullText);
-  const hasTravelerType =
-    /\b(solo|couple|family|friends|business|honeymoon)\b/i.test(fullText);
-  const hasInterests =
-    /\b(culture|food|adventure|history|art|relaxation|nightlife|shopping)\b/i.test(
-      fullText
-    );
-  const hasBudget =
-    /\b(budget|mid-range|luxury|cheap|expensive|mid\s*budget)\b/i.test(
-      fullText
-    );
-
-  return hasDuration && hasTravelerType && hasInterests && hasBudget;
+  return result;
 };
