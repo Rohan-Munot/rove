@@ -25,7 +25,7 @@ Required information for planning:
 </instructions>
 Be conversational, friendly, and ask only one question at a time.
 
-IMPORTANT: Your response should be conversational text that the user will see. Do not return JSON or structured data in your text response.`,
+IMPORTANT: Always provide a conversational response in natural language. Never return JSON or structured data as your main response.`,
     messages: messages,
     temperature: 0.3,
     experimental_output: Output.object({
@@ -51,14 +51,24 @@ IMPORTANT: Your response should be conversational text that the user will see. D
         budget: z.string().optional().describe("The budget for the trip."),
         followUpQuestion: z
           .string()
+          .optional()
           .describe(
             "The single, specific follow-up question to ask the user if information is missing."
           ),
       }),
     }),
   });
-  // Use the followUpQuestion from structured output if available, otherwise use the text
-  const conversationalText = experimental_output?.followUpQuestion || text;
+
+  // Generate appropriate conversational text based on the structured output
+  let conversationalText = text;
+
+  if (experimental_output?.isAllInfoProvided) {
+    conversationalText =
+      "Perfect! I have all the details I need. Let me create some amazing itineraries for you!";
+  } else if (experimental_output?.followUpQuestion) {
+    conversationalText = experimental_output.followUpQuestion;
+  }
+
   return {
     text: conversationalText,
     info: experimental_output,
