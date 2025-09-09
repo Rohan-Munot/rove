@@ -2,6 +2,7 @@ import {
   generateObject,
   generateText,
   ModelMessage,
+  Output,
   streamText,
   tool,
 } from "ai";
@@ -11,30 +12,61 @@ import { z } from "zod";
 import { searchWeb } from "../ai/tools/search-tool-definition";
 
 export const generateChatResponse = async (messages: ModelMessage[]) => {
-  const result = streamText({
+  const { text, experimental_output } = await generateText({
     model,
     system:
       SYSTEM_IDENTITY +
       `
 You are helping users plan their travel itineraries. Follow this approach:
-
+<instructions>
 1. If the user hasn't provided complete travel information, ask ONE specific follow-up question to gather missing details.
-
+<required_information>
 Required information for planning:
 - Destination (specific city/country)
 - Trip duration (number of days)
 - Traveler type (solo, couple, family, etc.)
 - Interests/preferences (food, culture, adventure, etc.)
 - Budget preference (budget, mid-range, luxury)
-
-2. If you have ALL the required information, respond with: "Perfect! I have all the details I need. Let me create some amazing itineraries for you! (Simulation mode - actual generation coming soon)"
-
+</required_information>
+2. If you have ALL the required information, respond with: "Perfect! I have all the details I need. Let me create some amazing itineraries for you!"
+</instructions>
 Be conversational, friendly, and ask only one question at a time.`,
     messages: messages,
     temperature: 0.3,
+    experimental_output: Output.object({
+      schema: z.object({
+        isAllInfoProvided: z
+          .boolean()
+          .describe(
+            "Set to true only when all 5 pieces of required information have been provided."
+          ),
+        destination: z
+          .string()
+          .optional()
+          .describe("The destination of the trip."),
+        duration: z
+          .number()
+          .optional()
+          .describe("The duration of the trip in days."),
+        travelerType: z.string().optional().describe("The type of traveler."),
+        interests: z
+          .array(z.string())
+          .optional()
+          .describe("The interests of the traveler."),
+        budget: z.string().optional().describe("The budget for the trip."),
+        followUpQuestion: z
+          .string()
+          .optional()
+          .describe(
+            "The single, specific follow-up question to ask the user if information is missing."
+          ),
+      }),
+    }),
   });
-
-  return result;
+  return {
+    text,
+    info: experimental_output,
+  };
 };
 
 type SearchResult = {
@@ -86,7 +118,7 @@ let accumalatedResearch: TravelSearch = {
   completedQueries: [],
   researchDepth: 0,
 };
-const generateSearchQueries = async (query: string) => {
+export const generateSearchQueries = async (query: string) => {
   const {
     object: { queries },
   } = await generateObject({
@@ -107,21 +139,22 @@ const generateSearchQueries = async (query: string) => {
   });
   return queries;
 };
-const performSearch = async (query: string): Promise<SearchResult[]> => {
+export const performSearch = async (query: string): Promise<SearchResult[]> => {
   try {
     const response = await searchWeb({ query, max_results: 5 });
-    return response.results.map((result) => ({
+    const searchResults = response.results.map((result) => ({
       title: result.title,
       url: result.url,
       content: result.content,
       score: result.score,
     }));
+    return searchResults;
   } catch (error) {
     console.error("Error performing search:", error);
     return [];
   }
 };
-const performAndEvaluateSearch = async (
+export const performAndEvaluateSearch = async (
   query: string,
   accumulatedSources: SearchResult[]
 ): Promise<SearchResult[]> => {
@@ -172,8 +205,6 @@ const performAndEvaluateSearch = async (
             if (evaluation === "relevant") {
               finalResults.push(pendingResult);
             }
-            console.log("Found:", pendingResult.url);
-            console.log("Evaluation completed:", evaluation);
             return evaluation === "irrelevant"
               ? "Search results are irrelevant. Please search again with a more specific query."
               : "Search results are relevant. End research for this query.";
@@ -189,7 +220,7 @@ const performAndEvaluateSearch = async (
   }
 };
 
-const generateLearnings = async (
+export const generateLearnings = async (
   query: string,
   searchResults: SearchResult[]
 ): Promise<Learning[]> => {
@@ -244,7 +275,7 @@ const generateLearnings = async (
   return object.learnings;
 };
 
-const deepResearch = async (
+export const deepResearch = async (
   query: string,
   depth: number
 ): Promise<TravelSearch> => {
@@ -256,12 +287,13 @@ const deepResearch = async (
     );
     accumalatedResearch.destination = destinationMatch?.[1] || "destination";
   }
-  if (depth === 0) return accumalatedResearch;
+  if (depth === 0) {
+    return accumalatedResearch;
+  }
 
   const queries = await generateSearchQueries(query);
   accumalatedResearch.queries.push(...queries);
   for (const query of queries) {
-    console.log("Generating search results for:", query);
     const searchResults = await performAndEvaluateSearch(
       query,
       accumalatedResearch.searchResults
@@ -269,7 +301,6 @@ const deepResearch = async (
     accumalatedResearch.searchResults.push(...searchResults);
 
     for (const searchResult of searchResults) {
-      console.log("Generating learnings for:", searchResult.url);
       const learnings = await generateLearnings(query, [searchResult]);
       accumalatedResearch.learnings.push(...learnings);
       accumalatedResearch.completedQueries.push(query);
@@ -286,7 +317,7 @@ const deepResearch = async (
   return accumalatedResearch;
 };
 
-const generateTravelReport = async (
+export const generateTravelReport = async (
   research: TravelSearch
 ): Promise<string> => {
   const { text } = await generateText({
@@ -324,10 +355,8 @@ export const conductTravelResearch = async (
     completedQueries: [],
     researchDepth: 0,
   };
-  console.log(`🚀 Starting deep travel research for: ${travelQuery}`);
   const research = await deepResearch(travelQuery, depth);
-  console.log("📝 Generating comprehensive travel report...");
   const report = await generateTravelReport(research);
-  console.log("✅ Travel research completed!");
-  return { research, report };
+  const result = { research, report };
+  return result;
 };
