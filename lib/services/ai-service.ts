@@ -1,11 +1,4 @@
-import {
-  generateObject,
-  generateText,
-  ModelMessage,
-  Output,
-  streamText,
-  tool,
-} from "ai";
+import { generateObject, generateText, ModelMessage, Output, tool } from "ai";
 import { model } from "@/lib/ai/client";
 import { SYSTEM_IDENTITY } from "@/lib/ai/prompts/base";
 import { z } from "zod";
@@ -30,7 +23,9 @@ Required information for planning:
 </required_information>
 2. If you have ALL the required information, respond with: "Perfect! I have all the details I need. Let me create some amazing itineraries for you!"
 </instructions>
-Be conversational, friendly, and ask only one question at a time.`,
+Be conversational, friendly, and ask only one question at a time.
+
+IMPORTANT: Your response should be conversational text that the user will see. Do not return JSON or structured data in your text response.`,
     messages: messages,
     temperature: 0.3,
     experimental_output: Output.object({
@@ -56,15 +51,16 @@ Be conversational, friendly, and ask only one question at a time.`,
         budget: z.string().optional().describe("The budget for the trip."),
         followUpQuestion: z
           .string()
-          .optional()
           .describe(
             "The single, specific follow-up question to ask the user if information is missing."
           ),
       }),
     }),
   });
+  // Use the followUpQuestion from structured output if available, otherwise use the text
+  const conversationalText = experimental_output?.followUpQuestion || text;
   return {
-    text,
+    text: conversationalText,
     info: experimental_output,
   };
 };

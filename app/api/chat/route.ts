@@ -27,6 +27,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const { message, id }: { message: UIMessage; id: string } = await req.json();
   let previousMessages: UIMessage[];
+
   try {
     previousMessages = await loadChat(id);
     previousMessages = await validateUIMessages({
@@ -40,68 +41,45 @@ export async function POST(req: Request) {
       throw err;
     }
   }
+
   const allMessages = [...previousMessages, message];
   const modelMessages = convertToModelMessages(allMessages as UIMessage[]);
   const { text, info } = await generateChatResponse(modelMessages);
+
   const assistantMessage: UIMessage = {
-    id: "",
+    id: createIdGenerator({ prefix: "assistant", size: 16 })(),
     role: "assistant",
     parts: [{ type: "text", text }],
   };
+
   const finalMessages = [...allMessages, assistantMessage];
   await saveChat({ chatId: id, messages: finalMessages });
 
-  let itinerary: any = null;
+  let userInfo: any = null;
   if (info?.isAllInfoProvided) {
     console.log("All info provided itinerary generation started");
-    itinerary = {
+    userInfo = {
       destination: info.destination,
       duration: info.duration,
       travelerType: info.travelerType,
       interests: info.interests,
       budget: info.budget,
     };
+    // You can also trigger deeper research here if needed
+    // const research = await conductTravelResearch(`Trip to ${info.destination} for ${info.duration} days`);
   }
+
   return new Response(
     JSON.stringify({
       messages: finalMessages.map((m, idx) => ({
         ...m,
-        id: `rove-msg-${idx.toString(16)}`,
+        id: createIdGenerator({ prefix: "user", size: 16 })(),
       })),
-      itinerary,
+      userInfo,
     }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }
   );
-  // try {
-  //   const result = streamText({
-  //     model: model,
-  //     messages: convertToModelMessages(allMessages as UIMessage[]),
-  //     experimental_transform: smoothStream(),
-  //   });
-  //   return result.toUIMessageStreamResponse({
-  //     originalMessages: allMessages as UIMessage[],
-  //     generateMessageId: createIdGenerator({ prefix: "rove-msg", size: 16 }),
-  //     onFinish: ({ messages }) => {
-  //       saveChat({ chatId: id, messages });
-  //       console.log(
-  //         `Chat saved with id ${id} and messages ${messages.length} `
-  //       );
-  //     },
-  //   });
-  // } catch (err) {
-  //   console.log(err);
-  //   const result = streamText({
-  //     model: model,
-  //     messages: convertToModelMessages(allMessages as UIMessage[]),
-  //     experimental_transform: smoothStream(),
-  //     system: SYSTEM_IDENTITY,
-  //   });
-  //   return result.toUIMessageStreamResponse({
-  //     originalMessages: allMessages as UIMessage[],
-  //     generateMessageId: createIdGenerator({ prefix: "rove-msg", size: 16 }),
-  //     onFinish: ({ messages }) => {
-  //       saveChat({ chatId: id, messages });
-  //     },
-  //   });
-  // }
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { UIMessage, useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { UIMessage } from "@ai-sdk/react";
 import { useState } from "react";
 
 export default function Chat({
@@ -9,26 +8,42 @@ export default function Chat({
   initialMessages,
 }: { id?: string | undefined; initialMessages?: UIMessage[] } = {}) {
   const [input, setInput] = useState("");
-  const { sendMessage, messages } = useChat({
-    id, // use the provided chat ID
-    messages: initialMessages, // load initial messages
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      prepareSendMessagesRequest({ messages, id }) {
-        return { body: { message: messages[messages.length - 1], id } };
-      },
-    }),
-  });
+  const [messages, setMessages] = useState<UIMessage[]>(initialMessages || []);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
-      sendMessage({ text: input });
+    if (input.trim() && !isLoading) {
+      const userMessage: UIMessage = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        parts: [{ type: "text", text: input }],
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
       setInput("");
+      setIsLoading(true);
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMessage, id }),
+        });
+
+        const data = await response.json();
+
+        if (data.messages) {
+          setMessages(data.messages);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  // simplified rendering code, extend as needed:
   return (
     <div>
       <div className="space-y-4 max-h-96 overflow-y-auto p-4 border rounded-lg bg-gray-50">
@@ -57,6 +72,13 @@ export default function Chat({
             </div>
           </div>
         ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-white text-gray-800 border">
+              <div className="text-sm">AI is typing...</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -64,8 +86,11 @@ export default function Chat({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type a message..."
+          disabled={isLoading}
         />
-        <button type="submit">Send</button>
+        <button type="submit" disabled={isLoading}>
+          Send
+        </button>
       </form>
     </div>
   );
